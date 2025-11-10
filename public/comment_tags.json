@@ -1,0 +1,8 @@
+{
+  "comment_tags": [
+    { "id": "clarification", "label": "Clarification", "color": "#007AFF" },
+    { "id": "bug", "label": "Bug", "color": "#FF3B30" },
+    { "id": "suggestion", "label": "Suggestion", "color": "#FFCC00" },
+    { "id": "validation", "label": "Validation", "color": "#34C759" }
+  ]
+}
