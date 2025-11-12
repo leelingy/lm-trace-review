@@ -28,14 +28,11 @@ export function AppProvider({ children }) {
         const tTags = await loadTraceTags();
         setCommentTags(cTags);
 
-        // Check if trace tags are in DB, otherwise use config
+        // Merge JSON file tags with DB tags (JSON tags take precedence, but keep user-added tags)
         const dbTags = await dataService.getTraceTags();
-        if (dbTags.length > 0) {
-          setTraceTags(dbTags);
-        } else {
-          setTraceTags(tTags);
-          await dataService.setTraceTags(tTags);
-        }
+        const mergedTags = [...new Set([...tTags, ...dbTags])];
+        setTraceTags(mergedTags);
+        await dataService.setTraceTags(mergedTags);
 
         // Load datasets
         await refreshDatasets();

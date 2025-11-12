@@ -99,6 +99,44 @@ function escapeCSVCell(cell) {
   return str;
 }
 
+// Export for comment analysis - one row per comment with trace info
+export function exportCommentsForAnalysisCSV(traces, comments) {
+  const headers = [
+    'trace_id',
+    'trace_tags',
+    'input',
+    'comment',
+    'comment_author',
+    'comment_tags',
+    'comment_date'
+  ];
+
+  const rows = [];
+
+  // Create one row per comment
+  comments.forEach(comment => {
+    const trace = traces.find(t => t.trace_id === comment.trace_id);
+    if (trace) {
+      rows.push([
+        trace.trace_id || '',
+        trace.trace_tags || '',
+        trace.input || '',
+        comment.comment || '',
+        comment.author?.display_name || '',
+        comment.tags ? comment.tags.join(', ') : '',
+        comment.created_at || ''
+      ]);
+    }
+  });
+
+  // Convert to CSV string
+  const csvContent = [headers, ...rows]
+    .map(row => row.map(cell => escapeCSVCell(cell)).join(','))
+    .join('\n');
+
+  return csvContent;
+}
+
 export function downloadCSV(csvContent, filename) {
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');

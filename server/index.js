@@ -3,7 +3,7 @@ import cors from 'cors';
 import db from './db.js';
 
 const app = express();
-const PORT = 3002;
+const PORT = process.env.PORT || 3002;
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -93,11 +93,15 @@ app.post('/api/traces', (req, res) => {
   try {
     const trace = req.body;
     console.log('Received trace data:', JSON.stringify(trace, null, 2));
+
+    // Handle dataset_id being passed as object or number
+    const datasetId = typeof trace.dataset_id === 'object' ? trace.dataset_id.id : trace.dataset_id;
+
     const result = db.prepare(`
       INSERT INTO traces (dataset_id, trace_id, date, time, input, message, tool_called, query_validity, identified_entities, trace_tags)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
-      trace.dataset_id,
+      datasetId,
       trace.trace_id || null,
       trace.date || null,
       trace.time || null,
@@ -185,12 +189,16 @@ app.get('/api/datasets/:datasetId/comments', (req, res) => {
 app.post('/api/comments', (req, res) => {
   try {
     const comment = req.body;
+
+    // Handle dataset_id being passed as object or number
+    const datasetId = typeof comment.dataset_id === 'object' ? comment.dataset_id.id : comment.dataset_id;
+
     const result = db.prepare(`
       INSERT INTO comments (dataset_id, trace_id, author_display_name, author_email, comment, tags,
                            highlight_text, highlight_offset_start, highlight_offset_end, highlight_source, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
-      comment.dataset_id,
+      datasetId,
       comment.trace_id,
       comment.author?.display_name,
       comment.author?.email,
@@ -304,17 +312,29 @@ app.put('/api/config/:key', (req, res) => {
 // Update dataset counts
 app.post('/api/datasets/:id/update-counts', (req, res) => {
   try {
+    console.log('Updating counts for dataset:', req.params.id);
+
     const traceCount = db.prepare('SELECT COUNT(*) as count FROM traces WHERE dataset_id = ?')
       .get(req.params.id).count;
     const commentCount = db.prepare('SELECT COUNT(*) as count FROM comments WHERE dataset_id = ?')
       .get(req.params.id).count;
 
+    console.log(`Trace count: ${traceCount}, Comment count: ${commentCount}`);
+
     db.prepare('UPDATE datasets SET traceCount = ?, commentCount = ?, lastUpdated = ? WHERE id = ?')
       .run(traceCount, commentCount, new Date().toISOString(), req.params.id);
 
     const dataset = db.prepare('SELECT * FROM datasets WHERE id = ?').get(req.params.id);
+
+    if (!dataset) {
+      console.error('Dataset not found:', req.params.id);
+      return res.status(404).json({ error: 'Dataset not found' });
+    }
+
+    console.log('Returning dataset:', dataset);
     res.json(dataset);
   } catch (error) {
+    console.error('Error updating counts:', error);
     res.status(500).json({ error: error.message });
   }
 });
