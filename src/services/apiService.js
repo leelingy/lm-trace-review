@@ -85,6 +85,18 @@ class ApiService {
     });
   }
 
+  async getTracesByTraceTag(tags) {
+    // Support both single tag (string) and multiple tags (array)
+    const tagString = Array.isArray(tags) ? tags.join(',') : tags;
+    return this.request(`/traces/by-trace-tag/${encodeURIComponent(tagString)}`);
+  }
+
+  async getTracesByCommentTag(tags) {
+    // Support both single tag (string) and multiple tags (array)
+    const tagString = Array.isArray(tags) ? tags.join(',') : tags;
+    return this.request(`/traces/by-comment-tag/${encodeURIComponent(tagString)}`);
+  }
+
   // Comment operations
   async addComment(datasetId, commentData) {
     return this.request('/comments', {
@@ -127,7 +139,13 @@ class ApiService {
 
   async addTraceTag(tag) {
     const tags = await this.getTraceTags();
-    if (!tags.includes(tag)) {
+    // Handle both string and object formats
+    const tagId = typeof tag === 'string' ? tag : tag.id;
+    const tagExists = tags.some(t => {
+      const tId = typeof t === 'string' ? t : t.id;
+      return tId === tagId;
+    });
+    if (!tagExists) {
       tags.push(tag);
       await this.request('/config/trace_tags', {
         method: 'PUT',

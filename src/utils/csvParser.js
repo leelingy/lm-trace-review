@@ -34,7 +34,13 @@ function normalizeHeaders(data) {
     // trace_tags variations
     'tracetags': 'trace_tags',
     'trace tags': 'trace_tags',
-    'tags': 'trace_tags'
+    'tags': 'trace_tags',
+
+    // latency variations
+    'latency': 'latency',
+    'duration': 'latency',
+    'response_time': 'latency',
+    'responsetime': 'latency'
   };
 
   return data.map(row => {
@@ -124,6 +130,19 @@ export function normalizeTraceData(rawData) {
     let identifiedEntities = row.identified_entities || '';
     let input = row.input || '';
 
+    // Handle timestamp field - split into date and time if present
+    let date = row.date || '';
+    let time = row.time || '';
+    if (row.timestamp && !date && !time) {
+      try {
+        const timestamp = new Date(row.timestamp);
+        date = timestamp.toISOString().split('T')[0]; // YYYY-MM-DD
+        time = timestamp.toISOString().split('T')[1].split('.')[0]; // HH:MM:SS
+      } catch (e) {
+        console.warn('Failed to parse timestamp:', row.timestamp);
+      }
+    }
+
     // Try to parse JSON from 'output' or 'message' field (Langfuse format)
     const jsonField = row.output || row.message;
     if (jsonField && typeof jsonField === 'string' && jsonField.trim().startsWith('{')) {
@@ -176,14 +195,15 @@ export function normalizeTraceData(rawData) {
 
     return {
       trace_id: row.trace_id || '',
-      date: row.date || '',
-      time: row.time || '',
+      date: date,
+      time: time,
       input: input,
       message: message,
       tool_called: toolCalled,
       query_validity: queryValidity,
       identified_entities: identifiedEntities,
-      trace_tags: row.trace_tags || ''
+      trace_tags: row.trace_tags || '',
+      latency: row.latency || ''
     };
   });
 }

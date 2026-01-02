@@ -1,4 +1,5 @@
 Query: Show me tasks we need to work on for clients in F.A.STUDIO100 in November
+---
 
 Here is the complete list of all tasks for clients associated with F.A.STUDIO100, where the task status is not "completed" (including statuses: not_started, blocked, past_due, approval_pending, and in_progress). 
 
@@ -17,7 +18,7 @@ Here is the complete list of all tasks for clients associated with F.A.STUDIO100
 | Refresh Financial Model           | not_started (00:30/00:15) | Financial Modeling   | Dharmendra Bharwad        |
 | Review Model                      | not_started (00:30/00:15) | Financial Modeling   | Maria Kiss                |
 
-2 incomplete tasks are due between Nov 1, 2025 - Nov 30, 2025, the date range you asked for. 
+> **📅 Incomplete tasks are due between Nov 1, 2025 - Nov 30, 2025**
 | Task Title                        | Due Date  | Workflow             | Assignee                  |
 |-----------------------------------|-------------|----------------------|---------------------------|
 | Data Entry & Rec                  | Nov 30, 2025 | Data Entry           | Mayur Patadiya            |
@@ -25,11 +26,12 @@ Here is the complete list of all tasks for clients associated with F.A.STUDIO100
 
 
 ### 2. Abramovic LLC
-| Task Title                   | Status      | Workflow           | Assignee     |
+| Task Title                   | Status (budgeted/logged)    | Workflow            | Assignee     |
 |------------------------------|-------------|--------------------|--------------|
-| Payroll Processing           | not_started | Payroll Processing | Maria Kiss   |
-| Enter & Pay Bills            | not_started | Accounts Payable   | Maria Kiss   |
+| Payroll Processing           | not_started (00:30/00:15) | Payroll Processing | Maria Kiss   |
+| Enter & Pay Bills            | not_started (00:30/00:15) | Accounts Payable   | Maria Kiss   |
 
+> **📅 Incomplete tasks are due between Nov 1, 2025 - Nov 30, 2025**
 No incomplete tasks are due Nov 1, 2025 - Nov 30, 2025
 
 

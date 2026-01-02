@@ -57,6 +57,14 @@ class DataServiceAdapter {
     return this.backend.deleteTrace(id);
   }
 
+  async getTracesByTraceTag(tag) {
+    return this.backend.getTracesByTraceTag(tag);
+  }
+
+  async getTracesByCommentTag(tag) {
+    return this.backend.getTracesByCommentTag(tag);
+  }
+
   // Comment operations
   async addComment(datasetId, commentData) {
     return this.backend.addComment(datasetId, commentData);

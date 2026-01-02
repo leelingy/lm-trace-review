@@ -167,7 +167,7 @@ export function TraceDetail({ trace, dataset, onBack, onNavigate }) {
         </div>
 
         {/* Right Panel - Metadata & Comments */}
-        <div className="w-96 border-l border-gray-200 bg-white overflow-auto">
+        <div className="w-2/5 border-l border-gray-200 bg-white overflow-auto">
           <div className="p-6 space-y-6">
             {/* Metadata */}
             <div>
@@ -177,6 +177,12 @@ export function TraceDetail({ trace, dataset, onBack, onNavigate }) {
                   <span className="text-gray-500">Date:</span>{' '}
                   <span className="text-gray-900">{trace.date} {trace.time}</span>
                 </div>
+                {trace.latency && (
+                  <div>
+                    <span className="text-gray-500">Latency:</span>{' '}
+                    <span className="text-gray-900">{trace.latency}</span>
+                  </div>
+                )}
                 {trace.tool_called && (
                   <div>
                     <span className="text-gray-500">Tool Called:</span>{' '}
@@ -269,26 +275,71 @@ export function TraceDetail({ trace, dataset, onBack, onNavigate }) {
 
 function TraceTagEditor({ trace, availableTags, onSave }) {
   const [isEditing, setIsEditing] = useState(false);
-  const [value, setValue] = useState(trace.trace_tags || '');
+  const [selectedTagIds, setSelectedTagIds] = useState([]);
+
+  // Parse trace_tags string and find matching tag objects
+  const currentTagIds = trace.trace_tags ? trace.trace_tags.split(',').map(t => t.trim()).filter(t => t) : [];
+  const currentTags = currentTagIds.map(tagId => {
+    // Try to find tag by id first, then by label (for backward compatibility)
+    return availableTags.find(t => t.id === tagId || t.label === tagId) || { id: tagId, label: tagId, color: '#007AFF' };
+  });
+
+  function handleEditStart() {
+    setSelectedTagIds(currentTagIds);
+    setIsEditing(true);
+  }
+
+  function handleToggleTag(tag) {
+    const tagId = typeof tag === 'string' ? tag : tag.id;
+    if (selectedTagIds.includes(tagId)) {
+      setSelectedTagIds(selectedTagIds.filter(t => t !== tagId));
+    } else {
+      setSelectedTagIds([...selectedTagIds, tagId]);
+    }
+  }
 
   function handleSave() {
-    onSave(value);
+    // Save as comma-separated string of tag IDs
+    onSave(selectedTagIds.join(', '));
     setIsEditing(false);
   }
 
-  const tags = trace.trace_tags ? trace.trace_tags.split(',').map(t => t.trim()).filter(t => t) : [];
+  function handleCancel() {
+    setSelectedTagIds([]);
+    setIsEditing(false);
+  }
 
   if (isEditing) {
     return (
       <div className="mt-2">
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          className="w-full px-2 py-1 border border-gray-300 rounded text-sm mb-2"
-          placeholder="tag1, tag2"
-          autoFocus
-        />
+        <div className="mb-2 text-xs text-gray-600">Select tags:</div>
+        <div className="flex flex-wrap gap-2 mb-3 p-2 border border-gray-300 rounded bg-gray-50 max-h-32 overflow-y-auto">
+          {availableTags.map((tag, idx) => {
+            const tagId = typeof tag === 'string' ? tag : tag.id;
+            const isSelected = selectedTagIds.includes(tagId);
+            const tagColor = typeof tag === 'string' ? '#007AFF' : tag.color;
+            return (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => handleToggleTag(tag)}
+                className={`px-3 py-1.5 text-xs rounded transition-colors ${
+                  isSelected ? 'text-white' : 'border border-gray-300'
+                }`}
+                style={{
+                  backgroundColor: isSelected ? tagColor : '#ffffff',
+                  color: isSelected ? '#ffffff' : '#374151'
+                }}
+              >
+                {isSelected && '✓ '}
+                {typeof tag === 'string' ? tag : tag.label}
+              </button>
+            );
+          })}
+        </div>
+        <div className="text-xs text-gray-500 mb-2">
+          Selected: {selectedTagIds.length > 0 ? selectedTagIds.join(', ') : 'None'}
+        </div>
         <div className="flex gap-2">
           <button
             onClick={handleSave}
@@ -297,10 +348,7 @@ function TraceTagEditor({ trace, availableTags, onSave }) {
             Save
           </button>
           <button
-            onClick={() => {
-              setValue(trace.trace_tags || '');
-              setIsEditing(false);
-            }}
+            onClick={handleCancel}
             className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-xs hover:bg-gray-300"
           >
             Cancel
@@ -313,13 +361,24 @@ function TraceTagEditor({ trace, availableTags, onSave }) {
   return (
     <div className="mt-2">
       <div className="flex gap-1 flex-wrap items-center">
-        {tags.map((tag, idx) => (
-          <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-            {tag}
-          </span>
-        ))}
+        {currentTags.map((tag, idx) => {
+          const tagColor = typeof tag === 'string' ? '#007AFF' : tag.color;
+          const tagLabel = typeof tag === 'string' ? tag : tag.label;
+          return (
+            <span
+              key={idx}
+              className="px-2 py-1 rounded text-xs"
+              style={{ backgroundColor: tagColor + '20', color: tagColor }}
+            >
+              {tagLabel}
+            </span>
+          );
+        })}
+        {currentTags.length === 0 && (
+          <span className="text-xs text-gray-400">No tags</span>
+        )}
         <button
-          onClick={() => setIsEditing(true)}
+          onClick={handleEditStart}
           className="px-2 py-1 text-gray-400 hover:text-gray-600 text-xs"
         >
           ✎ Edit

@@ -77,6 +77,49 @@ app.get('/api/datasets/:datasetId/traces', (req, res) => {
   }
 });
 
+// Get all traces with specific trace tags across all datasets (supports multiple tags)
+app.get('/api/traces/by-trace-tag/:tags', (req, res) => {
+  try {
+    const tags = req.params.tags.split(',').map(t => t.trim());
+
+    // Build WHERE clause to match traces that have AT LEAST ONE of the specified tags (OR logic)
+    const whereConditions = tags.map(() => 't.trace_tags LIKE ?').join(' OR ');
+    const likePatterns = tags.map(tag => `%${tag}%`);
+
+    const traces = db.prepare(`
+      SELECT t.*, d.name as dataset_name
+      FROM traces t
+      JOIN datasets d ON t.dataset_id = d.id
+      WHERE ${whereConditions}
+    `).all(...likePatterns);
+    res.json(traces);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get all traces with specific comment tags across all datasets (supports multiple tags)
+app.get('/api/traces/by-comment-tag/:tags', (req, res) => {
+  try {
+    const tags = req.params.tags.split(',').map(t => t.trim());
+
+    // Build WHERE clause to match traces that have comments with AT LEAST ONE of the specified tags (OR logic)
+    const whereConditions = tags.map(() => 'c.tags LIKE ?').join(' OR ');
+    const likePatterns = tags.map(tag => `%${tag}%`);
+
+    const traces = db.prepare(`
+      SELECT DISTINCT t.*, d.name as dataset_name
+      FROM traces t
+      JOIN datasets d ON t.dataset_id = d.id
+      JOIN comments c ON t.trace_id = c.trace_id AND t.dataset_id = c.dataset_id
+      WHERE ${whereConditions}
+    `).all(...likePatterns);
+    res.json(traces);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get('/api/traces/:id', (req, res) => {
   try {
     const trace = db.prepare('SELECT * FROM traces WHERE id = ?').get(req.params.id);
@@ -98,8 +141,8 @@ app.post('/api/traces', (req, res) => {
     const datasetId = typeof trace.dataset_id === 'object' ? trace.dataset_id.id : trace.dataset_id;
 
     const result = db.prepare(`
-      INSERT INTO traces (dataset_id, trace_id, date, time, input, message, tool_called, query_validity, identified_entities, trace_tags)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO traces (dataset_id, trace_id, date, time, input, message, tool_called, query_validity, identified_entities, trace_tags, latency)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       datasetId,
       trace.trace_id || null,
@@ -110,7 +153,8 @@ app.post('/api/traces', (req, res) => {
       trace.tool_called || null,
       trace.query_validity || null,
       trace.identified_entities || null,
-      trace.trace_tags || null
+      trace.trace_tags || null,
+      trace.latency || null
     );
 
     const newTrace = db.prepare('SELECT * FROM traces WHERE id = ?').get(result.lastInsertRowid);
@@ -127,7 +171,7 @@ app.put('/api/traces/:id', (req, res) => {
     db.prepare(`
       UPDATE traces
       SET trace_id = ?, date = ?, time = ?, input = ?, message = ?, tool_called = ?,
-          query_validity = ?, identified_entities = ?, trace_tags = ?
+          query_validity = ?, identified_entities = ?, trace_tags = ?, latency = ?
       WHERE id = ?
     `).run(
       trace.trace_id,
@@ -139,6 +183,7 @@ app.put('/api/traces/:id', (req, res) => {
       trace.query_validity,
       trace.identified_entities,
       trace.trace_tags,
+      trace.latency,
       req.params.id
     );
 

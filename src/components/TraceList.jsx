@@ -3,6 +3,7 @@ import { dataService } from '../services/dataService';
 import { renderMarkdown } from '../utils/markdown';
 import { useApp } from '../context/AppContext';
 import { exportTracesToCSV, exportCommentsForAnalysisCSV, downloadCSV } from '../utils/csvExport';
+import { TagManagement } from './TagManagement';
 
 export function TraceList({ dataset, onSelectTrace, onBack }) {
   const { traceTags, addTraceTag, commentTags } = useApp();
@@ -17,6 +18,7 @@ export function TraceList({ dataset, onSelectTrace, onBack }) {
   const [sortBy, setSortBy] = useState('date');
   const [sidePanelTrace, setSidePanelTrace] = useState(null);
   const [showMarkdown, setShowMarkdown] = useState(false);
+  const [showTagManagement, setShowTagManagement] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -84,10 +86,15 @@ export function TraceList({ dataset, onSelectTrace, onBack }) {
     await dataService.updateTrace(updatedTrace);
 
     // Add new tags to global list
-    const tags = newTags.split(',').map(t => t.trim()).filter(t => t);
-    for (const tag of tags) {
-      if (!traceTags.includes(tag)) {
-        await addTraceTag(tag);
+    const tagIds = newTags.split(',').map(t => t.trim()).filter(t => t);
+    for (const tagId of tagIds) {
+      // Check if tag already exists in traceTags
+      const tagExists = traceTags.some(t => {
+        const tId = typeof t === 'string' ? t : t.id;
+        return tId === tagId;
+      });
+      if (!tagExists) {
+        await addTraceTag(tagId);
       }
     }
 
@@ -131,6 +138,15 @@ export function TraceList({ dataset, onSelectTrace, onBack }) {
           </div>
           <div className="flex gap-2">
             <button
+              onClick={() => setShowTagManagement(true)}
+              className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+              </svg>
+              Manage Tags
+            </button>
+            <button
               onClick={handleExport}
               className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2"
             >
@@ -167,9 +183,11 @@ export function TraceList({ dataset, onSelectTrace, onBack }) {
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">All Trace Tags</option>
-            {traceTags.map(tag => (
-              <option key={tag} value={tag}>{tag}</option>
-            ))}
+            {traceTags.map(tag => {
+              const tagId = typeof tag === 'string' ? tag : tag.id;
+              const tagLabel = typeof tag === 'string' ? tag : tag.label;
+              return <option key={tagId} value={tagId}>{tagLabel}</option>;
+            })}
           </select>
 
           <select
@@ -202,10 +220,7 @@ export function TraceList({ dataset, onSelectTrace, onBack }) {
                 Trace ID
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Date
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Time
+                Latency
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">
                 Input
@@ -234,10 +249,7 @@ export function TraceList({ dataset, onSelectTrace, onBack }) {
                     {trace.trace_id}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {trace.date}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {trace.time}
+                    {trace.latency || '-'}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
                     {truncateText(trace.input, 80)}
@@ -298,7 +310,7 @@ export function TraceList({ dataset, onSelectTrace, onBack }) {
 
       {/* Side Panel */}
       {sidePanelTrace && (
-        <div className="fixed inset-y-0 right-0 w-1/3 bg-white shadow-2xl border-l border-gray-200 overflow-y-auto z-50">
+        <div className="fixed inset-y-0 right-0 w-2/5 bg-white shadow-2xl border-l border-gray-200 overflow-y-auto z-50">
           <div className="p-6">
             {/* Close Button */}
             <button
@@ -329,6 +341,9 @@ export function TraceList({ dataset, onSelectTrace, onBack }) {
                 <div><span className="font-semibold">Trace ID:</span> {sidePanelTrace.trace_id}</div>
                 <div><span className="font-semibold">Date:</span> {sidePanelTrace.date}</div>
                 <div><span className="font-semibold">Time:</span> {sidePanelTrace.time}</div>
+                {sidePanelTrace.latency && (
+                  <div><span className="font-semibold">Latency:</span> {sidePanelTrace.latency}</div>
+                )}
                 {sidePanelTrace.tool_called && (
                   <div><span className="font-semibold">Tool Called:</span> {sidePanelTrace.tool_called}</div>
                 )}
@@ -397,47 +412,107 @@ export function TraceList({ dataset, onSelectTrace, onBack }) {
           </div>
         </div>
       )}
+
+      {/* Tag Management Modal */}
+      <TagManagement
+        isOpen={showTagManagement}
+        onClose={() => setShowTagManagement(false)}
+      />
     </div>
   );
 }
 
 function TraceTagEditor({ trace, availableTags, onSave }) {
   const [isEditing, setIsEditing] = useState(false);
-  const [value, setValue] = useState(trace.trace_tags || '');
+  const [selectedTagIds, setSelectedTagIds] = useState([]);
 
-  function handleSave() {
-    onSave(value);
+  // Parse trace_tags string and find matching tag objects
+  const currentTagIds = trace.trace_tags ? trace.trace_tags.split(',').map(t => t.trim()).filter(t => t) : [];
+  const currentTags = currentTagIds.map(tagId => {
+    // Try to find tag by id first, then by label (for backward compatibility)
+    return availableTags.find(t => {
+      const tId = typeof t === 'string' ? t : t.id;
+      const tLabel = typeof t === 'string' ? t : t.label;
+      return tId === tagId || tLabel === tagId;
+    }) || { id: tagId, label: tagId, color: '#007AFF' };
+  });
+
+  function handleEditStart(e) {
+    e.stopPropagation();
+    setSelectedTagIds(currentTagIds);
+    setIsEditing(true);
+  }
+
+  function handleToggleTag(tag) {
+    const tagId = typeof tag === 'string' ? tag : tag.id;
+    if (selectedTagIds.includes(tagId)) {
+      setSelectedTagIds(selectedTagIds.filter(t => t !== tagId));
+    } else {
+      setSelectedTagIds([...selectedTagIds, tagId]);
+    }
+  }
+
+  function handleSave(e) {
+    e.stopPropagation();
+    // Save as comma-separated string of tag IDs
+    onSave(selectedTagIds.join(', '));
     setIsEditing(false);
   }
 
-  const tags = trace.trace_tags ? trace.trace_tags.split(',').map(t => t.trim()).filter(t => t) : [];
+  function handleCancel(e) {
+    e.stopPropagation();
+    setSelectedTagIds([]);
+    setIsEditing(false);
+  }
 
   if (isEditing) {
     return (
-      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          className="px-2 py-1 border border-gray-300 rounded text-sm"
-          placeholder="tag1, tag2"
-          autoFocus
-        />
-        <button
-          onClick={handleSave}
-          className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
-        >
-          Save
-        </button>
-        <button
-          onClick={() => {
-            setValue(trace.trace_tags || '');
-            setIsEditing(false);
-          }}
-          className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs hover:bg-gray-300"
-        >
-          Cancel
-        </button>
+      <div className="relative" onClick={(e) => e.stopPropagation()}>
+        <div className="absolute z-10 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg p-3 min-w-[300px]">
+          <div className="mb-2 text-xs text-gray-600 font-medium">Select tags:</div>
+          <div className="flex flex-wrap gap-2 mb-3 max-h-40 overflow-y-auto">
+            {availableTags.map((tag, idx) => {
+              const tagId = typeof tag === 'string' ? tag : tag.id;
+              const isSelected = selectedTagIds.includes(tagId);
+              const tagColor = typeof tag === 'string' ? '#007AFF' : tag.color;
+              const tagLabel = typeof tag === 'string' ? tag : tag.label;
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleToggleTag(tag)}
+                  className={`px-2 py-1 text-xs rounded transition-colors ${
+                    isSelected ? 'text-white' : 'border border-gray-300'
+                  }`}
+                  style={{
+                    backgroundColor: isSelected ? tagColor : '#ffffff',
+                    color: isSelected ? '#ffffff' : '#374151'
+                  }}
+                >
+                  {isSelected && '✓ '}
+                  {tagLabel}
+                </button>
+              );
+            })}
+          </div>
+          <div className="text-xs text-gray-500 mb-2 border-t pt-2">
+            Selected: {selectedTagIds.length > 0 ? selectedTagIds.join(', ') : 'None'}
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleSave}
+              className="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+            >
+              Save
+            </button>
+            <button
+              onClick={handleCancel}
+              className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-xs hover:bg-gray-300"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -445,16 +520,24 @@ function TraceTagEditor({ trace, availableTags, onSave }) {
   return (
     <div
       className="flex gap-1 flex-wrap items-center"
-      onClick={(e) => {
-        e.stopPropagation();
-        setIsEditing(true);
-      }}
+      onClick={handleEditStart}
     >
-      {tags.map((tag, idx) => (
-        <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-          {tag}
-        </span>
-      ))}
+      {currentTags.map((tag, idx) => {
+        const tagColor = typeof tag === 'string' ? '#007AFF' : tag.color;
+        const tagLabel = typeof tag === 'string' ? tag : tag.label;
+        return (
+          <span
+            key={idx}
+            className="px-2 py-1 rounded text-xs"
+            style={{ backgroundColor: tagColor + '20', color: tagColor }}
+          >
+            {tagLabel}
+          </span>
+        );
+      })}
+      {currentTags.length === 0 && (
+        <span className="text-xs text-gray-400">No tags</span>
+      )}
       <button className="px-2 py-1 text-gray-400 hover:text-gray-600 text-xs">
         ✎ Edit
       </button>

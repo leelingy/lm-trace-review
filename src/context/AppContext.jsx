@@ -28,11 +28,10 @@ export function AppProvider({ children }) {
         const tTags = await loadTraceTags();
         setCommentTags(cTags);
 
-        // Merge JSON file tags with DB tags (JSON tags take precedence, but keep user-added tags)
-        const dbTags = await dataService.getTraceTags();
-        const mergedTags = [...new Set([...tTags, ...dbTags])];
-        setTraceTags(mergedTags);
-        await dataService.setTraceTags(mergedTags);
+        // Use only tags from JSON file (JSON file is the source of truth)
+        // Sync database to match JSON file exactly
+        setTraceTags(tTags);
+        await dataService.setTraceTags(tTags);
 
         // Load datasets
         await refreshDatasets();
@@ -50,11 +49,25 @@ export function AppProvider({ children }) {
   }
 
   async function addTraceTag(tag) {
-    if (!traceTags.includes(tag)) {
-      const newTags = [...traceTags, tag];
+    // Handle both string and object formats
+    const tagObj = typeof tag === 'string' 
+      ? { id: tag, label: tag, color: '#007AFF' }
+      : tag;
+    
+    const tagExists = traceTags.some(t => t.id === tagObj.id);
+    if (!tagExists) {
+      const newTags = [...traceTags, tagObj];
       setTraceTags(newTags);
-      await dataService.addTraceTag(tag);
+      await dataService.addTraceTag(tagObj);
     }
+  }
+
+  async function removeTraceTag(tag) {
+    // Handle both string and object formats
+    const tagId = typeof tag === 'string' ? tag : tag.id;
+    const newTags = traceTags.filter(t => t.id !== tagId);
+    setTraceTags(newTags);
+    await dataService.setTraceTags(newTags);
   }
 
   const value = {
@@ -62,6 +75,7 @@ export function AppProvider({ children }) {
     commentTags,
     traceTags,
     addTraceTag,
+    removeTraceTag,
     datasets,
     refreshDatasets,
     currentDataset,

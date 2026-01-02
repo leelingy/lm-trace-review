@@ -1,0 +1,32 @@
+Query: What task is assigned to Maria? 
+---
+## Tasks by Client (Assigned to Maria)
+
+**Date range used:** Nov 1, 2025 - Nov 30, 2025
+
+
+### 1. 11,13,14,15 LLC
+| Task Title                        | Status (budgeted/logged)  | Workflow             |                   
+|-----------------------------------|-------------|----------------------|---------------------------|
+| Data Entry & Rec                  | not_started (00:30/00:15) | Data Entry           |
+| Review books and client correspondence | not_started (00:30/00:15) | Month Close      
+| Account Reconciliation & Review   | not_started (00:30/00:15) | Month Close          | 
+| Refresh Financial Model           | not_started (00:30/00:15) | Financial Modeling   | 
+| Review Model                      | not_started (00:30/00:15) | Financial Modeling   |
+
+> **📅 Incomplete tasks are due between Nov 1, 2025 - Nov 30, 2025**
+> 
+> | Task Title                        | Due Date  | Workflow             | 
+> |-----------------------------------|-------------|----------------------|
+> | Data Entry & Rec                  | Nov 30, 2025 | Data Entry           | 
+> | Review books and client correspondence | Nov 30, 2025 | Month Close      | 
+
+
+### 2. Abramovic LLC
+| Task Title                   | Status (budgeted/logged)    | Workflow            | 
+|------------------------------|-------------|--------------------|--------------|
+| Payroll Processing           | not_started (00:30/00:15) | Payroll Processing | 
+| Enter & Pay Bills            | not_started (00:30/00:15) | Accounts Payable   |
+
+**📅 Incomplete tasks are due between Nov 1, 2025 - Nov 30, 2025**
+None

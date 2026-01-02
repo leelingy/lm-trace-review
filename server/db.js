@@ -32,6 +32,7 @@ db.exec(`
     query_validity TEXT,
     identified_entities TEXT,
     trace_tags TEXT,
+    latency TEXT,
     FOREIGN KEY (dataset_id) REFERENCES datasets(id) ON DELETE CASCADE
   );
 
@@ -61,5 +62,19 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_comments_dataset ON comments(dataset_id);
   CREATE INDEX IF NOT EXISTS idx_comments_trace_id ON comments(trace_id);
 `);
+
+// Add latency column if it doesn't exist (migration)
+try {
+  const tableInfo = db.prepare("PRAGMA table_info(traces)").all();
+  const hasLatency = tableInfo.some(col => col.name === 'latency');
+
+  if (!hasLatency) {
+    console.log('Adding latency column to traces table...');
+    db.exec('ALTER TABLE traces ADD COLUMN latency TEXT');
+    console.log('Latency column added successfully');
+  }
+} catch (error) {
+  console.error('Error adding latency column:', error);
+}
 
 export default db;

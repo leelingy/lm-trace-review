@@ -136,7 +136,13 @@ class DataService {
 
   async addTraceTag(tag) {
     let tags = await this.getTraceTags();
-    if (!tags.includes(tag)) {
+    // Handle both string and object formats
+    const tagId = typeof tag === 'string' ? tag : tag.id;
+    const tagExists = tags.some(t => {
+      const tId = typeof t === 'string' ? t : t.id;
+      return tId === tagId;
+    });
+    if (!tagExists) {
       tags.push(tag);
       await db.put(STORES.CONFIG, { key: 'trace_tags', value: tags });
     }

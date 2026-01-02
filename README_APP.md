@@ -100,7 +100,7 @@ T001,"This needs clarification on the time period.",Lee Ling,clarification
 ### Highlighting Text
 
 1. In trace detail view, select text in the message area
-2. A comment form will appear
+2. A comment form will appear2
 3. Enter your comment referring to the selected text
 4. The highlighted text will be visually marked
 5. Hover over highlights to see associated comments
