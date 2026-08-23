@@ -8,6 +8,7 @@
     "server": "cd server && npm start",
     "frontend": "vite",
     "build": "vite build",
+    "deploy": "GITHUB_ACTIONS=true npm run build && cd dist && git init -b gh-pages && git add -A && git commit -m \"Deploy LM Trace Review\" && git push -f https://github.com/leelingy/lm-trace-review.git gh-pages && cd .. && rm -rf dist/.git",
     "lint": "eslint .",
     "preview": "vite preview"
   },
