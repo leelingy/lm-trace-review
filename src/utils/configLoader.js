@@ -2,7 +2,7 @@
 
 export async function loadCommentTags() {
   try {
-    const response = await fetch('/comment_tags.json');
+    const response = await fetch(`${import.meta.env.BASE_URL}comment_tags.json`);
     const data = await response.json();
     return data.comment_tags || [];
   } catch (error) {
@@ -18,7 +18,7 @@ export async function loadCommentTags() {
 
 export async function loadTraceTags() {
   try {
-    const response = await fetch('/trace_tags.json');
+    const response = await fetch(`${import.meta.env.BASE_URL}trace_tags.json`);
     const data = await response.json();
     const tags = data.trace_tags || [];
     // Handle both object format (new) and string format (legacy)
