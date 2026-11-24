@@ -1,0 +1,13 @@
+{
+  "trace_tags": [
+    { "id": "company workflow status", "label": "company workflow status", "color": "#007AFF" },
+    { "id": "client time report and status", "label": "client time report and status", "color": "#FF3B30" },
+    { "id": "Retested on Nov 17", "label": "Retested on Nov 17", "color": "#FFCC00" },
+    { "id": "to test", "label": "to test", "color": "#34C759" },
+    { "id": "ground-truth", "label": "ground-truth", "color": "#00C7BE" },
+    { "id": "task status", "label": "task status", "color": "#00C7BE" },
+    { "id": "task assignment", "label": "task assignment", "color": "#00C7BE" },
+    { "id": "Capacity", "label": "Capacity", "color": "#5AC8FA" },
+    { "id": "task due date", "label": "task due date", "color": "#8E8E93" }
+  ]
+}

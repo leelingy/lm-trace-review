@@ -1,0 +1,13 @@
+{
+  "comment_tags": [
+    { "id": "clarification", "label": "Clarification", "color": "#007AFF" },
+    { "id": "bug", "label": "Bug", "color": "#FF3B30" },
+    { "id": "suggestion", "label": "Suggestion", "color": "#FFCC00" },
+    { "id": "positive", "label": "positive", "color": "#34C759" },
+    { "id": "expected behavior", "label": "expected behavior", "color": "#00C7BE" },
+    { "id": "current behavior", "label": "current behavior", "color": "#FF9500" },
+    { "id": "to test", "label": "to test", "color": "#AF52DE" },
+    { "id": "incorrect date range", "label": "incorrect date range", "color": "#FF2D55" },
+    { "id": "P2 bug", "label": "P2 bug", "color": "#5856D6" }
+  ]
+}
